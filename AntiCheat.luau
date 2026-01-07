@@ -100,14 +100,23 @@ function core.check.noclip(data: Object)
 	local humanoidRoot = data.humanoidRoot
 	local params = data.params
 
-	local overlap = workspace:GetPartBoundsInBox(humanoidRoot.CFrame, Vector3.new(1,1,1), params)
-
-	for _, part in ipairs(overlap) do
-		if part.CanCollide == true then
+	local possibleDirections = {
+		Vector3.new(1, 0, 0),
+		Vector3.new(-1, 0, 0),
+		Vector3.new(0, 1, 0),
+		Vector3.new(0, -1, 0),
+		Vector3.new(0, 0, 1), 
+		Vector3.new(0, 0, -1)
+	}
+	
+	for _, direction in ipairs(possibleDirections) do
+		local raycastResult = workspace:Raycast(humanoidRoot.Position, Vector3.new(1,1,1), params)
+		
+		if raycastResult then
 			detected = true
 		end
 	end
-
+	
 	return detected
 end
 
@@ -131,7 +140,6 @@ function core.punish(reason: string, ctx: CoreContext)
 		end
 	end
 
-	print("Punished!")
 end
 
 -- initialize anticheat class
@@ -173,7 +181,7 @@ function AntiCheat:run()
 
 			local humanoidRoot = character:WaitForChild("HumanoidRootPart")
 			local humanoid = character:WaitForChild("Humanoid")
-			local params = OverlapParams.new()
+			local params = RaycastParams.new()
 			params.FilterType = Enum.RaycastFilterType.Blacklist
 			params.FilterDescendantsInstances = { character }
 
@@ -192,6 +200,7 @@ function AntiCheat:run()
 			}
 			
 			print("initialized")
+
 			runService.Heartbeat:Connect(function()
 				
 				-- verifications before init
