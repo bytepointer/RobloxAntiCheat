@@ -49,7 +49,6 @@ export type CoreContext = {
 
 local runService = game:GetService("RunService")
 local workspace = game:GetService("Workspace")
-
 -- causes
 
 -- next update make smth to change causes
@@ -79,9 +78,9 @@ local defaultCauses  = {
 -- utils
 
 function copy(write, target)
-	
+
 	for key, value in pairs(target) do
-		
+
 		write[key] = value
 	end
 end
@@ -108,15 +107,16 @@ function core.check.noclip(data: Object)
 		Vector3.new(0, 0, 1), 
 		Vector3.new(0, 0, -1)
 	}
-	
+
 	for _, direction in ipairs(possibleDirections) do
-		local raycastResult = workspace:Raycast(humanoidRoot.Position, Vector3.new(1,1,1), params)
 		
-		if raycastResult then
+		local raycastResult = workspace:Raycast(humanoidRoot.Position, direction * 0.5, params)
+		
+		if raycastResult then --raycastResult.Instance.CanCollide then
 			detected = true
 		end
 	end
-	
+
 	return detected
 end
 
@@ -126,8 +126,10 @@ function core.punish(reason: string, ctx: CoreContext)
 	local lastPosition = ctx.storedVector.lastPosition
 	local humanoidRoot = ctx.humanoidRoot
 	
-	local cause = ctx.config.causes[reason]
+	local humanoid = ctx.humanoid
 	
+	local cause = ctx.config.causes[reason]
+
 	for _, action in ipairs(cause.action) do
 
 		if action == "kick" then
@@ -137,6 +139,11 @@ function core.punish(reason: string, ctx: CoreContext)
 		elseif action == "anchor" then
 			humanoidRoot.Anchored = true
 			ctx.storedTime.lastAnchored = tick() 
+			
+			local backPosition = humanoidRoot.Position - humanoidRoot.CFrame.LookVector * 4
+
+			humanoidRoot.Position = backPosition
+			--print(humanoid:MoveTo(backPosition))
 		end
 	end
 
@@ -147,16 +154,16 @@ end
 function AntiCheat.initialize(config: Object) : AntiCheatService
 
 	local causes = {}
-	
+
 	copy(causes, defaultCauses)
-	
+
 	for key, value in pairs(config.causes) do
-		
+
 		causes[key] = value
 	end
-	
+
 	config.causes = causes
-	
+
 	local self = setmetatable({ _config = config }, AntiCheat)
 
 	return self
@@ -171,9 +178,9 @@ function AntiCheat:run()
 	local maxSpeed = config.maxSpeed
 	local maxPositionChange = config.maxPositionChange
 	local maxTimeInAir = config.maxTimeInAir
-	
+
 	local causes = config.causes
-	
+
 	game.Players.PlayerAdded:Connect(function(player)
 
 		-- ANTI SUSPECT MOVEMENT
@@ -184,25 +191,26 @@ function AntiCheat:run()
 			local params = RaycastParams.new()
 			params.FilterType = Enum.RaycastFilterType.Blacklist
 			params.FilterDescendantsInstances = { character }
-
-			local anchorTime = 3 -- just customizable in source because i did not viewed necessity to change it
+			params.IgnoreWater = true;
 			
+			local anchorTime = 3 -- just customizable in source because i did not viewed necessity to change it
+
 			local bypass: boolean = false
 			local initialized: boolean = false	
-			
+
 			local storedTime = {
 				lastFloor = tick(),
 				lastAnchored = 0,
 			}
-			
+
 			local storedVector = {
 				lastPosition = humanoidRoot.Position,
 			}
-			
+
 			print("initialized")
 
 			runService.Heartbeat:Connect(function()
-				
+
 				-- verifications before init
 				if humanoid.Health <= 0 then return end
 
@@ -213,10 +221,11 @@ function AntiCheat:run()
 				end
 
 				if storedTime.lastAnchored ~= 0 and tick() - storedTime.lastAnchored >= anchorTime then
+					
 					humanoidRoot.Anchored = false
 					storedTime.lastAnchored = 0 -- changes to 0 because the player it is not anchored
 				end
-				
+
 				-- local variables
 				local humanoidState = humanoid:GetState()
 
@@ -235,7 +244,7 @@ function AntiCheat:run()
 
 				local climbing: boolean = humanoidState == Enum.HumanoidStateType.Climbing
 				local swimming: boolean = humanoidState == Enum.HumanoidStateType.Swimming
-				
+
 				-- UPDATING LAST VARIABLES (e.x: lastFloor, falling)
 
 				if humanoid.FloorMaterial ~= Enum.Material.Air or climbing or swimming then
@@ -278,23 +287,24 @@ function AntiCheat:run()
 				end
 
 				-- RUNNING
-	
+
 				if #found > 0 then
-					
+
 					local context: CoreContext = {
 						player = player,
 						humanoidRoot = humanoidRoot,
+						humanoid = humanoid,
 						storedTime = storedTime,
 						storedVector = storedVector,
 						config = {
 							causes = causes
 						}
 					}
-					
+
 					for _, reason in pairs(found) do
 						core.punish(reason, context)
 					end
-					
+
 					storedTime = context.storedTime
 				end
 
