@@ -5,7 +5,7 @@ local AntiCheat = require(script.Parent.AntiCheat)
 local causes = {
   noclip = {
     message="You got caught using noclip",
-    action= { "kick" }
+    action= { "back", "anchor" }
   }
 }
 
