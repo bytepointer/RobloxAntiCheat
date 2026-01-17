@@ -1,4 +1,4 @@
-# Version
+## Version
 
 0.1.0
 
@@ -10,6 +10,9 @@
 
 And done! Your anti cheat will be up and working!
 
-# Alert
+## FEATURES
 
-- At moment, admins commands/Teleports will be detected by the anti cheat and will punish the player, but it will be fixed in the next update.
+- Fly detection;
+- No clip detection;
+- Air jump detection;
+- Speed hack detection.
