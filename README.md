@@ -2,7 +2,7 @@
 
 0.1.0
 
-# How to use
+## HOW TO USE
 
 - Put `AntiCheat.luau` in a `Module Script`
 - Put `callAntiCheat.luau` in a `Script` 
